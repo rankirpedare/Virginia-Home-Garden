@@ -28,17 +28,15 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
         
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Build Android Release
+    - name: Build Android APK
       run: |
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease
         
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      # THIS IS THE FIX: Changed from v3 to v4
+      uses: actions/upload-artifact@v4
       with:
         name: Virginia-Home-Garden-APK
         path: android/app/build/outputs/apk/release/app-release.apk
