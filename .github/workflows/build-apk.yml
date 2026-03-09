@@ -32,6 +32,24 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
+      - name: Generate Android files
+        run: |
+          # Create a temporary React Native project to get the Android files
+          npx react-native init tempapp --version 0.72.0
+          cp -r tempapp/android ./
+          cp -r tempapp/ios ./  # Optional: for iOS builds
+          rm -rf tempapp
+          
+          # Update the app name in Android files
+          cd android
+          find . -type f -name "*.xml" -o -name "*.gradle" -exec sed -i 's/tempapp/VirginiaHomeGarden/g' {} \;
+          cd ..
+          
+      - name: Replace default App.js with your app
+        run: |
+          # Your App.js is already in the repo, we just need to make sure it's used
+          echo "Using your existing App.js"
+          
       - name: Build Android APK
         run: |
           cd android
@@ -39,7 +57,7 @@ jobs:
           ./gradlew assembleRelease
           
       - name: Upload APK
-        uses: actions/upload-artifact@v4  # ← CONFIRM THIS IS v4
+        uses: actions/upload-artifact@v4
         with:
           name: Virginia-Home-Garden-APK
           path: android/app/build/outputs/apk/release/app-release.apk
