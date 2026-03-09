@@ -1,0 +1,38 @@
+# React Native
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# Android
+/android/app/build
+/android/build
+/android/.gradle
+/local.properties
+*.iml
+*.hprof
+.cxx/
+
+# iOS
+/ios/Pods
+/ios/build
+/ios/*.xcworkspace
+/ios/*.xcodeproj/xcuserdata/
+
+# Environment
+.env
+*.p12
+*.pfx
+*.key
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
