@@ -1,4 +1,26 @@
 {
-  "name": "VirginiaHomeGarden",
-  "displayName": "Virginia Home & Garden"
+  "expo": {
+    "name": "Virginia Home & Garden",
+    "slug": "virginia-home-garden",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2E7D32"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.virginiahomegardens.app"
+    },
+    "android": {
+      "package": "com.virginiahomegardens.app",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
 }
