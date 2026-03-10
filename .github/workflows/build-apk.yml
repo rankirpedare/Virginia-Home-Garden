@@ -21,8 +21,10 @@ jobs:
           node-version: '18'
           
       - name: Install dependencies
-        run: npm install
-        
+        run: |
+          npm init -y
+          npm install react@18.2.0 react-native@0.72.0
+          
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -32,29 +34,179 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
-      - name: Generate Android files
+      - name: Create Android files
         run: |
-          # Create a temporary React Native project to get the Android files
-          npx react-native init tempapp --version 0.72.0
-          cp -r tempapp/android ./
-          cp -r tempapp/ios ./  # Optional: for iOS builds
-          rm -rf tempapp
+          # Create basic Android project structure manually instead of using react-native init
+          mkdir -p android/app/src/main
+          mkdir -p android/app/src/debug
+          mkdir -p android/app/src/main/java/com/virginiahomegardens/app
+          mkdir -p android/app/src/main/res/layout
+          mkdir -p android/app/src/main/res/values
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/gradle/wrapper
           
-          # Update the app name in Android files
-          cd android
-          find . -type f -name "*.xml" -o -name "*.gradle" -exec sed -i 's/tempapp/VirginiaHomeGarden/g' {} \;
-          cd ..
+          # Create build.gradle files
+          cat > android/build.gradle << 'EOF'
+          buildscript {
+              ext {
+                  buildToolsVersion = "34.0.0"
+                  minSdkVersion = 21
+                  compileSdkVersion = 34
+                  targetSdkVersion = 34
+                  ndkVersion = "25.1.8937393"
+                  kotlinVersion = "1.8.0"
+              }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath("com.android.tools.build:gradle:7.4.2")
+                  classpath("com.facebook.react:react-native-gradle-plugin")
+                  classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+              }
+          }
           
-      - name: Replace default App.js with your app
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          
+          cat > android/app/build.gradle << 'EOF'
+          apply plugin: "com.android.application"
+          apply plugin: "com.facebook.react"
+          
+          react {
+              reactNativeDir = file("../node_modules/react-native")
+              codegenDir = file("../node_modules/@react-native/codegen")
+          }
+          
+          android {
+              compileSdkVersion rootProject.ext.compileSdkVersion
+              
+              defaultConfig {
+                  applicationId "com.virginiahomegardens.app"
+                  minSdkVersion rootProject.ext.minSdkVersion
+                  targetSdkVersion rootProject.ext.targetSdkVersion
+                  versionCode 1
+                  versionName "1.0"
+              }
+              
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+                  }
+              }
+          }
+          
+          dependencies {
+              implementation "com.facebook.react:react-android"
+          }
+          EOF
+          
+          cat > android/settings.gradle << 'EOF'
+          rootProject.name = 'VirginiaHomeGarden'
+          apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+          applyNativeModulesSettingsGradle(settings)
+          include ':app'
+          includeBuild('../node_modules/@react-native/gradle-plugin')
+          EOF
+          
+          cat > android/gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          
+          cat > android/gradlew << 'EOF'
+          #!/bin/sh
+          exec java -Xmx1024M -Xss4m -XX:+UseParallelGC -XX:MaxMetaspaceSize=512m -jar gradle/wrapper/gradle-wrapper.jar "$@"
+          EOF
+          
+          chmod +x android/gradlew
+          
+          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.virginiahomegardens.app">
+              
+              <uses-permission android:name="android.permission.INTERNET" />
+              
+              <application
+                  android:name=".MainApplication"
+                  android:label="@string/app_name"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:allowBackup="false"
+                  android:theme="@style/AppTheme">
+                  
+                  <activity
+                      android:name=".MainActivity"
+                      android:label="@string/app_name"
+                      android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+                      android:launchMode="singleTask"
+                      android:windowSoftInputMode="adjustResize"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          
+          cat > android/app/src/main/java/com/virginiahomegardens/app/MainActivity.java << 'EOF'
+          package com.virginiahomegardens.app;
+          
+          import com.facebook.react.ReactActivity;
+          
+          public class MainActivity extends ReactActivity {
+              @Override
+              protected String getMainComponentName() {
+                  return "VirginiaHomeGarden";
+              }
+          }
+          EOF
+          
+          cat > android/app/src/main/res/values/strings.xml << 'EOF'
+          <resources>
+              <string name="app_name">Virginia Home & Garden</string>
+          </resources>
+          EOF
+          
+          cat > android/app/src/main/res/values/styles.xml << 'EOF'
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+                  <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+              </style>
+          </resources>
+          EOF
+          
+      - name: Create index.js if missing
         run: |
-          # Your App.js is already in the repo, we just need to make sure it's used
-          echo "Using your existing App.js"
+          if [ ! -f index.js ]; then
+            cat > index.js << 'EOF'
+          import {AppRegistry} from 'react-native';
+          import App from './App';
+          
+          AppRegistry.registerComponent('VirginiaHomeGarden', () => App);
+          EOF
+          fi
           
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --stacktrace
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
