@@ -1,4 +1,4 @@
-name: Build Expo APK
+name: Build Android APK
 
 on:
   push:
@@ -17,24 +17,23 @@ jobs:
           node-version: 18
           
       - name: Install dependencies
-        run: npm install
-        
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
+        run: |
+          npm install -g expo-cli@6.3.10
+          npm install
           
       - name: Install EAS CLI
         run: npm install -g eas-cli
-        
+          
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+          
       - name: Build APK
         run: |
           npx expo install expo-dev-client
           npx expo prebuild --clean
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease -Pexpo.modules.autolinking=false
+          ./gradlew assembleRelease
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
